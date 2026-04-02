@@ -9,51 +9,72 @@
   <a href="https://github.com/tachikomared/bankr-buddy/blob/master/LICENSE"><img src="https://img.shields.io/github/license/tachikomared/bankr-buddy?style=flat-square" alt="License"></a>
 </p>
 
-**Bankr Buddy** is a cross-environment desktop companion for [OpenClaw](https://openclaw.ai) and [Claude Code](https://claude.ai/code). It mirrors agent state, keeps your buddy animated, and keeps the vibe alive while you code.
+**Bankr Buddy** is a retro pixel desktop companion that lives on your screen. It mirrors your **OpenClaw** and **Claude Code** agent states in real time — thinking, building, juggling subagents, celebrating, and sleeping when idle.
 
 ---
 
-## 🚀 Setup Guide
+## 🎨 Buddy States
 
-### 1. Windows (Companion App)
-1. Open the `companion-app/` folder in a terminal on your Windows host.
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the companion:
-   ```bash
-   npm start
-   ```
-
-### 2. WSL2 (OpenClaw Gateway)
-1. Ensure your hook files are correctly mapped in your OpenClaw environment:
-   ```text
-   ~/.openclaw/hooks/bankr-buddy/
-   ```
-2. Update your `openclaw.json` config:
-   ```json
-   "hooks": {
-     "internal": {
-       "load": { "extraDirs": ["/home/tachiboss/tachi/.openclaw/hooks"] },
-       "entries": { "bankr-buddy": { "enabled": true } }
-     }
-   }
-   ```
-3. Restart the gateway: `systemctl --user restart openclaw-gateway`.
-
-### 3. Claude Code (Windows Workflow)
-1. Run the companion app on Windows.
-2. Claude Code pushes updates to the local HTTP endpoint (`localhost:23444`).
-3. Keep sensitive configs in local `.env` files (never commit these).
+| What's happening | Buddy State |
+|---|---|
+| Prompt submitted | 💭 thinking |
+| Tool running | ⚡ working |
+| Many subagents | 🟣 juggling |
+| Task done | ★ happy |
+| Error | ✗ error |
+| 60s idle | 😴 sleeping |
 
 ---
 
-## 🛠 Troubleshooting
-- **Image broken?** Ensure the image file is at `assets/bankr-buddy-main.png` and properly committed.
-- **Hook not loading?** Check `openclaw.json` paths and run `openclaw hooks list`.
-- **Windows app not connecting?** Verify the companion port (`23444`) and WSL2-to-Windows host networking.
+## 🚀 Quick Setup
 
-## 📦 Repo hygiene
-- **NEVER** commit `.env` files, `node_modules`, or Electron binaries.
-- Keep setup docs and runtime code separated.
+### 1. Install & Run Companion
+```bash
+git clone https://github.com/tachikomared/bankr-buddy
+cd bankr-buddy
+npm install
+npm start
+```
+Buddy appears as a pixel-art CRT TV. Drag it anywhere; move to the screen edge for "peek" mode.
+
+### 2. Connect OpenClaw
+```bash
+openclaw plugins install ~/bankr-buddy
+openclaw gateway restart
+openclaw hooks enable bankr-buddy-notifier
+openclaw gateway restart
+```
+
+### 3. Connect Claude Code
+```bash
+node hooks/claude-code-install.js
+```
+
+---
+
+## ⚙️ How it works
+Buddy runs a local HTTP server (`127.0.0.1:23444`) that accepts state updates from:
+- **OpenClaw** (via internal hooks)
+- **Claude Code** (via stdin hook)
+- **Bankr Gateway** (via optional health monitor)
+
+The Electron renderer resolves state priority (e.g., `error` > `working` > `happy`) and triggers pixel animations.
+
+## 🛠 Manual Testing
+Trigger a state change manually to verify your connection:
+```bash
+curl -X POST http://127.0.0.1:23444/state \
+  -H "Content-Type: application/json" \
+  -d '{"state":"happy","session_id":"test"}'
+```
+
+---
+
+## 📂 Project Structure
+- `/src`: Electron main, state machine, and pixel-art renderer.
+- `/hooks`: Plugin logic for OpenClaw, Claude Code, and Bankr gateway polling.
+- `/skills`: Agent skill definitions for autonomous management.
+
+---
+
+MIT License — Built by **TachikomaRed x smolemaru**
