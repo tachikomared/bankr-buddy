@@ -1,66 +1,59 @@
 # Bankr Buddy Companion
 
 <p align="center">
-  <img src="assets/bankr-buddy-main.png" alt="Bankr Buddy" width="420" />
+  <img src="assets/bankr-buddy-main.png" alt="Bankr Buddy" width="200" />
 </p>
-
-**Bankr Buddy** is a tiny desktop companion for OpenClaw + Claude Code.
-It mirrors agent state, animates the buddy, and keeps the vibe alive.
-
-## What it does
-- Mirrors OpenClaw events into the Windows companion UI
-- Keeps eyes / mouth moving while idle or active
-- Supports click-to-idle, wake, and juggle interactions
-- Bridges WSL2 ↔ Windows with HTTP hooks
-
-## Screenshots
 
 <p align="center">
-  <img src="assets/bankr-buddy-main.png" alt="Bankr Buddy main screen" width="900" />
+  <a href="https://github.com/tachikomared/bankr-buddy/actions"><img src="https://img.shields.io/github/actions/workflow/status/tachikomared/bankr-buddy/ci.yml?style=flat-square" alt="Build Status"></a>
+  <a href="https://github.com/tachikomared/bankr-buddy/blob/master/LICENSE"><img src="https://img.shields.io/github/license/tachikomared/bankr-buddy?style=flat-square" alt="License"></a>
 </p>
 
-## Quick start
+**Bankr Buddy** is a cross-environment desktop companion for [OpenClaw](https://openclaw.ai) and [Claude Code](https://claude.ai/code). It mirrors agent state, keeps your buddy animated, and keeps the vibe alive while you code.
 
-### Windows companion app
-1. Open `companion-app/` on Windows.
+---
+
+## 🚀 Setup Guide
+
+### 1. Windows (Companion App)
+1. Open the `companion-app/` folder in a terminal on your Windows host.
 2. Install dependencies:
    ```bash
    npm install
    ```
-3. Start the app:
+3. Start the companion:
    ```bash
    npm start
    ```
 
-### OpenClaw on WSL2
-1. Keep the hook files in:
+### 2. WSL2 (OpenClaw Gateway)
+1. Ensure your hook files are correctly mapped in your OpenClaw environment:
    ```text
    ~/.openclaw/hooks/bankr-buddy/
    ```
-2. Make sure your OpenClaw config includes the hook directory in `hooks.internal.load.extraDirs`.
-3. Do **not** edit your global OpenClaw bootstrap files during setup.
+2. Update your `openclaw.json` config:
+   ```json
+   "hooks": {
+     "internal": {
+       "load": { "extraDirs": ["/home/tachiboss/tachi/.openclaw/hooks"] },
+       "entries": { "bankr-buddy": { "enabled": true } }
+     }
+   }
+   ```
+3. Restart the gateway: `systemctl --user restart openclaw-gateway`.
 
-### Claude Code on Windows only
-If you only want the Windows companion + Claude Code workflow:
+### 3. Claude Code (Windows Workflow)
 1. Run the companion app on Windows.
-2. Configure Claude Code to send updates to the local companion endpoint.
-3. Keep secrets in local `.env` files only.
+2. Claude Code pushes updates to the local HTTP endpoint (`localhost:23444`).
+3. Keep sensitive configs in local `.env` files (never commit these).
 
-## Troubleshooting
-- **README not showing on GitHub home page**: The repo root must contain this `README.md`.
-- **GitHub sidebar description empty**: Add the repo description in GitHub settings. README text does not control it.
-- **Image not showing**: Put the image at `assets/bankr-buddy-main.png` and commit it.
-- **Hook not loading**: Recheck `openclaw.json` and `extraDirs`.
-- **Windows app not connecting**: Confirm the companion is listening on the expected port and WSL2 can reach the Windows host.
+---
 
-## Repo hygiene
-- Never commit `.env` files
-- Never commit `node_modules`
-- Never commit Electron binaries
-- Keep setup docs separate from runtime hook code
+## 🛠 Troubleshooting
+- **Image broken?** Ensure the image file is at `assets/bankr-buddy-main.png` and properly committed.
+- **Hook not loading?** Check `openclaw.json` paths and run `openclaw hooks list`.
+- **Windows app not connecting?** Verify the companion port (`23444`) and WSL2-to-Windows host networking.
 
-## Files
-- `HOOK.md` — OpenClaw hook notes
-- `README.md` — GitHub landing page
-- `handler.js` — OpenClaw event handler
-- `companion-app/` — Windows companion app source
+## 📦 Repo hygiene
+- **NEVER** commit `.env` files, `node_modules`, or Electron binaries.
+- Keep setup docs and runtime code separated.
