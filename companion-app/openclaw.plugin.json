@@ -1,0 +1,25 @@
+{
+  "id": "bankr-buddy",
+  "name": "Bankr Buddy",
+  "version": "1.0.0",
+  "description": "Retro pixel desktop companion that reacts to your OpenClaw sessions in real-time. Made by TachikomaRed x smolemaru.",
+  "author": "TachikomaRed x smolemaru",
+  "license": "MIT",
+  "entry": "./index.js",
+  "skills": ["./skills"],
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "buddyPort": {
+        "type": "number",
+        "default": 23444,
+        "description": "HTTP port Bankr Buddy listens on (must match PORT in src/main.js)"
+      },
+      "buddyHost": {
+        "type": "string",
+        "default": "127.0.0.1",
+        "description": "Host Bankr Buddy runs on"
+      }
+    }
+  }
+}

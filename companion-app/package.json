@@ -1,0 +1,22 @@
+{
+  "name": "bankr-buddy",
+  "version": "1.0.0",
+  "description": "Bankr Buddy — retro pixel desktop companion for OpenClaw + Claude Code + Bankr",
+  "author": "TachikomaRed x smolemaru",
+  "openclaw": {
+    "extensions": ["./index.js"],
+    "hooks": ["./hooks/bankr-buddy-notifier"]
+  },
+  "main": "./src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "install-hooks:claude": "node hooks/claude-code-install.js",
+    "monitor": "node hooks/bankr-monitor.js"
+  },
+  "keywords": ["bankr", "openclaw", "claude-code", "desktop-pet", "companion", "bankr-buddy"],
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^30.0.0"
+  }
+}
