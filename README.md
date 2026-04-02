@@ -4,12 +4,7 @@
   <img src="assets/bankr-buddy-main.png" alt="Bankr Buddy" width="200" />
 </p>
 
-<p align="center">
-  <a href="https://github.com/tachikomared/bankr-buddy/actions"><img src="https://img.shields.io/github/actions/workflow/status/tachikomared/bankr-buddy/ci.yml?style=flat-square" alt="Build Status"></a>
-  <a href="https://github.com/tachikomared/bankr-buddy/blob/master/LICENSE"><img src="https://img.shields.io/github/license/tachikomared/bankr-buddy?style=flat-square" alt="License"></a>
-</p>
-
-**Bankr Buddy** is a retro pixel desktop companion that lives on your screen. It mirrors your **OpenClaw** and **Claude Code** agent states in real time — thinking, building, juggling subagents, celebrating, and sleeping when idle.
+**Bankr Buddy** is a retro pixel desktop companion that lives on your screen. It mirrors your **OpenClaw** and **Claude Code** agent states in real time — thinking, working, juggling subagents, celebrating, and sleeping when idle.
 
 ---
 
