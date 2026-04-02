@@ -396,7 +396,7 @@ function registerPetTap() {
       showBubble('AHHH! 😵');
       setTimeout(() => window.buddy.forceState('idle'), 3000);
     } else if (clickCount >= 1) {
-      if (curState === 'happy') {
+      if (curState === 'happy' || curState === 'sleeping') {
         window.buddy.forceState('idle');
       } else {
         pet.classList.add('anim-poke');
