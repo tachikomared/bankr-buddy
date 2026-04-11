@@ -1,15 +1,20 @@
+
 'use strict';
-// src/main.js — Bankr Buddy Electron main process
+// src/main.js - Bankr Buddy Electron main process
 // Made by TachikomaRed x smolemaru
 
-const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, screen, shell } = require('electron');
-const http = require('http');
-const path = require('path');
-const fs   = require('fs');
+const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, screen, shell, globalShortcut, desktopCapturer } = require('electron');
+const http       = require('http');
+const path       = require('path');
+const fs         = require('fs');
+const sound      = require('./sound');
+const screenshot = require('./screenshot');
+const companions = require('./companions');
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const PORT          = parseInt(process.env.BUDDY_PORT || '', 10) || 23444;
 const IDLE_SLEEP_MS = 60_000;
+const THINKING_LOCK_MS = 3000;
 const MIN_STATE_MS  = 1_200;
 const POSITION_FILE = path.join(app.getPath('userData'), 'buddy-position.json');
 
@@ -50,6 +55,10 @@ const EVENT_TO_STATE = {
   GatewayDown:          'error',
   GatewayUnreachable:   'notification',
   BankrCreditsLow:      'notification',
+  // New event maps
+  'message:received':   'thinking',
+  'agent:bootstrap':    'thinking',
+  'message:sent':       'happy',
 };
 
 // ── Runtime state ─────────────────────────────────────────────────────────────
@@ -77,23 +86,35 @@ function resolveState() {
   return best;
 }
 
-function pushState(state, sessionId = 'default') {
-  sessions[sessionId] = { state, ts: Date.now() };
+function pushState(state, sessionId = "default") {
+  const now = Date.now();
+
+  // If we are currently thinking and within lock time, ignore new 'idle' pushes
+  if (currentState === 'thinking' && now < lockUntil && state === 'idle') {
+    return;
+  }
+
+  if (state === 'thinking') {
+    lockUntil = now + THINKING_LOCK_MS;
+  }
+
+  sessions[sessionId] = { state, ts: now };
   resetSleepTimer();
 
-  const now      = Date.now();
   const resolved = resolveState();
-  const newP     = PRIORITY[resolved] ?? 0;
-  const curP     = PRIORITY[currentState] ?? 0;
+  currentState = resolved; // Update global state tracker
 
-  if (now >= lockUntil || newP >= curP) {
-    currentState = resolved;
-    lockUntil    = now + MIN_STATE_MS;
-    if (mainWindow) {
-      mainWindow.webContents.send('state-change', { state: currentState, isMini: isMiniMode });
-    }
+  if (mainWindow) {
+    mainWindow.webContents.send("state-change", { state: resolved, isMini: isDND });
+
+    // Keep mouse events passed through; renderer handles click capture when needed
+    mainWindow.setIgnoreMouseEvents(true, { forward: true });
+
+    sound.playState(resolved);
   }
 }
+
+
 
 function resetSleepTimer() {
   clearTimeout(sleepTimer);
@@ -130,12 +151,16 @@ function startServer() {
       req.on('data', (d) => { body += d; });
       req.on('end',  () => {
         try {
+          console.log(`[HTTP] incoming POST /state: body=${body}`);
           const { state, session_id, event } = JSON.parse(body || '{}');
           const sid = session_id || 'default';
 
           // Resolve state: explicit state > event name lookup
           let resolved = state;
-          if (!resolved && event) resolved = EVENT_TO_STATE[event];
+          if (!resolved && event) {
+            resolved = EVENT_TO_STATE[event];
+            if (!resolved) console.warn(`[HTTP] unknown event: ${event}`);
+          }
 
           // SubagentStart: escalate to conducting if ≥2 juggling sessions
           if (event === 'SubagentStart') {
@@ -159,14 +184,14 @@ function startServer() {
     res.end();
   });
 
-  server.listen(PORT, '127.0.0.1', () => {
-    console.log(`🟣 Bankr Buddy listening on http://127.0.0.1:${PORT}`);
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🟣 Bankr Buddy listening on http://0.0.0.0:${PORT}`);
     console.log('   Made by TachikomaRed x smolemaru');
   });
 
   server.on('error', (e) => {
     if (e.code === 'EADDRINUSE') {
-      console.warn(`[Bankr Buddy] Port ${PORT} already in use — set BUDDY_PORT to override`);
+      console.warn(`[Bankr Buddy] Port ${PORT} already in use - set BUDDY_PORT to override`);
     }
   });
 }
@@ -182,7 +207,7 @@ function savePosition(x, y) {
 // ── Window ────────────────────────────────────────────────────────────────────
 function createWindow() {
   const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
-  const W = 160, H = 160;
+  const W = 160, H = 200;
   const saved = loadPosition();
 
   mainWindow = new BrowserWindow({
@@ -205,11 +230,18 @@ function createWindow() {
   });
 
   mainWindow.setIgnoreMouseEvents(true, { forward: true });
-  mainWindow.loadFile(path.join(__dirname, 'src/index.html'));
+  mainWindow.loadFile(companions.htmlPath);
 
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
+
+  // Global mouse tracking loop (50ms interval)
+  setInterval(() => {
+    if (!mainWindow) return;
+    const pos = screen.getCursorScreenPoint();
+    mainWindow.webContents.send('global-mouse', pos);
+  }, 50);
 
   mainWindow.on('moved', () => {
     const [x, y] = mainWindow.getPosition();
@@ -233,7 +265,7 @@ function createTray() {
     'Uxn/Z2Bg+E9l/J+BgeE/AOaWCdJnxHf6AAAAAElFTkSuQmCC', 'base64');
   const img = nativeImage.createFromBuffer(png);
   tray = new Tray(img);
-  tray.setToolTip('Bankr Buddy — TachikomaRed x smolemaru');
+  tray.setToolTip('Bankr Buddy - TachikomaRed x smolemaru');
 
   const buildMenu = () => Menu.buildFromTemplate([
     { label: `🟣 Bankr Buddy`,       enabled: false },
@@ -256,7 +288,29 @@ function createTray() {
       },
     },
     { type: 'separator' },
-    { label: '🔌 Buddy Health',  click: () => shell.openExternal(`http://127.0.0.1:${PORT}/health`) },
+    {
+      label: '🔊 Sound Pack',
+      submenu: [
+        { label: 'EVE (Wall-E) ✓', click: async () => { await sound.loadPack('eve-walle'); mainWindow.webContents.send('show-bubble', 'EVE online! ✓'); } },
+        { label: 'Bender (Futurama)', click: async () => { await sound.loadPack('futurama_bender'); mainWindow.webContents.send('show-bubble', 'Bite my shiny metal ass!'); } },
+        { label: 'Orc Peon', click: async () => { await sound.loadPack('peon'); mainWindow.webContents.send('show-bubble', 'Zug zug!'); } },
+        { label: 'Human Peasant', click: async () => { await sound.loadPack('peasant'); mainWindow.webContents.send('show-bubble', 'Peasant sounds loaded!'); } },
+        { type: 'separator' },
+        { label: '⚙️ Settings', click: () => { if (mainWindow) mainWindow.webContents.send('show-sound-panel'); } }
+      ]
+    },
+    { label: '▶ Test Sound', click: async () => { sound.playCategory('task.complete'); mainWindow.webContents.send('show-bubble', 'Zug zug!'); } },
+    { label: '🔌 Buddy Health',  click: () => shell.openExternal(`http://0.0.0.0:${PORT}/health`) },
+    { label: '📸 Screenshot to Agent  Ctrl+Shift+S', click: () => screenshot.capture() },
+    { type: 'separator' },
+
+    { label: '🎭 Companion', submenu: companions.list.map(c => ({
+        label: c.label,
+        type: 'radio',
+        checked: companions.active.id === c.id,
+        click: async () => { await companions.switchTo(c.id); tray.setContextMenu(buildMenu()); }
+    })) },
+    { type: 'separator' },
     { label: '💰 Bankr Credits', click: () => shell.openExternal('https://bankr.bot/llm?tab=credits') },
     { label: '📖 Bankr Docs',    click: () => shell.openExternal('https://docs.bankr.bot/llm-gateway/overview') },
     { type: 'separator' },
@@ -268,11 +322,31 @@ function createTray() {
 }
 
 // ── IPC ───────────────────────────────────────────────────────────────────────
-ipcMain.on('enable-mouse',  () => mainWindow?.setIgnoreMouseEvents(false));
-ipcMain.on('disable-mouse', () => mainWindow?.setIgnoreMouseEvents(true, { forward: true }));
-ipcMain.on('drag-end',      (_, pos) => { savePosition(pos.x, pos.y); });
+ipcMain.on('enable-mouse',  () => { 
+  console.log('enable-mouse'); 
+  mainWindow?.setIgnoreMouseEvents(false); 
+});
+ipcMain.on('disable-mouse', () => { 
+  console.log('disable-mouse'); 
+  // ONLY ignore when not in happy/idle state to allow normal flow
+  if (currentState !== 'happy' && currentState !== 'idle') {
+      mainWindow?.setIgnoreMouseEvents(true, { forward: true });
+  } else {
+      mainWindow?.setIgnoreMouseEvents(false);
+  }
+});
+ipcMain.on('drag-end',      (_, pos) => { console.log('drag-end'); savePosition(pos.x, pos.y); });
 ipcMain.on('mini-exit',     () => { isMiniMode = false; mainWindow?.webContents.send('state-change', { state: currentState, isMini: false }); });
 ipcMain.on('force-state',   (_, s) => pushState(s, 'manual'));
+ipcMain.on('take-screenshot', () => screenshot.capture());
+ipcMain.handle('screenshot:hotkey', () => HOTKEY);
+ipcMain.on('show-sound-panel', () => { console.log('[IPC] show-sound-panel'); mainWindow?.webContents.send('show-sound-panel'); });
+ipcMain.handle('sound:listPacks',  async ()        => sound.listPacks());
+ipcMain.handle('sound:loadPack',   async (_, name) => sound.loadPack(name));
+ipcMain.handle('sound:getConfig',  ()              => sound.getConfig());
+ipcMain.on('sound:setVolume',  (_, v) => sound.setVolume(v));
+ipcMain.on('sound:setEnabled', (_, v) => sound.setEnabled(v));
+ipcMain.handle('sound:test',   async (_, cat) => sound.playCategory(cat || 'task.complete'));
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
@@ -280,7 +354,33 @@ app.whenReady().then(() => {
   createWindow();
   createTray();
   resetSleepTimer();
+
+  // Sound engine - lazy init after app is ready
+  sound.init();
+  sound._sendToRenderer = (channel, data) => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, data);
+  };
+
+  // Screenshot module
+  screenshot.register((state, bubble) => {
+    pushState(state, 'screenshot');
+    if (bubble && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('show-bubble', bubble);
+    }
+  });
+
+  // Companion switcher - reload window with new HTML when switched
+  companions.onChange(async (id, htmlPath) => {
+    console.log(`[companion] Switching to ${id} → ${htmlPath}`);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      await mainWindow.loadFile(htmlPath);
+      // Re-send current state so new companion renders correctly
+      mainWindow.webContents.send('state-change', { state: currentState, isMini: isMiniMode });
+    }
+  });
+
   app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });
 });
 
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+console.log('Main process notified to open sound panel');
