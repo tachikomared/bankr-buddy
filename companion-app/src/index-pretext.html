@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Bankr Buddy — PRETEXT</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; user-select:none; -webkit-user-select:none; }
+html, body { width:160px; height:160px; background:transparent; overflow:visible; font-family:'Courier New', Courier, monospace; }
+#pet { position:absolute; left:0; top:0; width:160px; height:160px; cursor:grab; transform-origin:center center; z-index:10; }
+canvas { display:block; width:160px; height:160px; }
+</style>
+</head>
+<body>
+<div id="pet">
+ <canvas id="c" width="320" height="320"></canvas>
+</div>
+<script>
+// Minimal implementation
+if(window.buddy){
+ window.buddy.onShowBubble((t)=>console.log('BUBBLE:', t));
+}
+</script>
+</body>
+</html>
