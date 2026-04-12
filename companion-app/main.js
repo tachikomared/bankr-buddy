@@ -376,6 +376,9 @@ app.whenReady().then(() => {
       await mainWindow.loadFile(htmlPath);
       // Re-send current state so new companion renders correctly
       mainWindow.webContents.send('state-change', { state: currentState, isMini: isMiniMode });
+      
+      // Ensure mouse events are set correctly for new companion
+      mainWindow.setIgnoreMouseEvents(true, { forward: true });
     }
   });
 
