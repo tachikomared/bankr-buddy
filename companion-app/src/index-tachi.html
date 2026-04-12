@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>$TACHI Crab — Companion</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;user-select:none}
+html,body{width:160px;height:160px;background:transparent;overflow:hidden;font-family:'Courier New',monospace;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#stage{position:relative;width:144px;height:160px}
+#pet{position:absolute;left:0;top:0;width:144px;height:160px;cursor:grab;transform-origin:center bottom;z-index:10}
+#pet:active{cursor:grabbing}
+canvas{display:block;width:144px;height:160px}
+#bubble{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);z-index:99;background:#cc1a0e;color:#fff;font-size:9px;font-weight:bold;padding:5px 9px;border-radius:7px;border:2px solid #fff;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s}
+#bubble.show{opacity:1}
+#emotion{position:absolute;top:2px;right:2px;font-size:15px;pointer-events:none;opacity:0;transition:opacity .15s}
+#emotion.show{opacity:1}
+@keyframes idle-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.anim-idle{animation:idle-bob 2.5s ease-in-out infinite}
+</style>
+</head>
+<body>
+<div id="bubble"></div>
+<div id="emotion"></div>
+<div id="stage">
+<div id="pet" class="anim-idle">
+<canvas id="c" width="144" height="160"></canvas>
+</div>
+</div>
+<script>
+// Placeholder for tachi.html - functional crab implementation
+// (Simplified version of tachi-v9 to fit 160x160 constraint)
+function showBubble(t){ const b=document.getElementById('bubble'); b.textContent=t; b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),3000); }
+window.buddy.onShowBubble((t)=>{ console.log('BUBBLE:', t); showBubble(t); });
+</script>
+</body>
+</html>
