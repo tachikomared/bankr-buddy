@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Bankr Buddy — PRETEXT</title>
+<!-- Made by TachikomaRed x smolemaru — Pretext Matrix Companion -->
 <style>
 * { margin:0; padding:0; box-sizing:border-box; user-select:none; -webkit-user-select:none; }
 html, body { width:160px; height:160px; background:transparent; overflow:visible; font-family:'Courier New', Courier, monospace; }
@@ -11,14 +12,29 @@ canvas { display:block; width:160px; height:160px; }
 </style>
 </head>
 <body>
-<div id="pet">
+<div id="pet" class="anim-idle">
  <canvas id="c" width="320" height="320"></canvas>
 </div>
 <script>
-// Minimal implementation
+const DPR=2,W=160,H=160;
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+canvas.width=W*DPR;canvas.height=H*DPR;
+ctx.scale(DPR,DPR);
+function speak(t){console.log('PRETEXT SPEECH:',t);}
 if(window.buddy){
- window.buddy.onShowBubble((t)=>console.log('BUBBLE:', t));
+ window.buddy.onStateChange((d)=>{console.log('STATE:',d.state);});
+ window.buddy.onShowBubble((t)=>{speak(t);});
 }
+// Render loop placeholder
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ ctx.fillStyle='#00ff41';
+ ctx.font='10px "Courier New"';
+ ctx.fillText('PRETEXT ONCHAIN',10,80);
+ requestAnimationFrame(draw);
+}
+draw();
 </script>
 </body>
 </html>

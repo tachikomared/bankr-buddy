@@ -4,16 +4,20 @@
 <meta charset="UTF-8">
 <title>$TACHI Crab</title>
 <style>
-*{margin:0;padding:0}
-html,body{width:160px;height:160px;background:transparent;overflow:hidden}
-#pet{width:160px;height:160px}
+*{margin:0;padding:0;box-sizing:border-box;user-select:none}
+html,body{width:160px;height:160px;background:transparent;overflow:hidden;font-family:'Courier New',monospace;}
+#pet{width:160px;height:160px;display:flex;align-items:center;justify-content:center;color:#ff4d4d;font-size:24px;}
+#bubble{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);z-index:99;background:#1a0000;color:#ff4d4d;font-size:9px;font-weight:bold;padding:4px 8px;border:1px solid #ff4d4d;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s}
+#bubble.show{opacity:1}
 </style>
 </head>
 <body>
-<div id="pet"></div>
+<div id="bubble"></div>
+<div id="pet">🦀</div>
 <script>
+function showBubble(t){ const b=document.getElementById('bubble'); b.textContent=t; b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),3000); }
 if(window.buddy){
- window.buddy.onShowBubble((t)=>console.log('BUBBLE:', t));
+ window.buddy.onShowBubble((t)=>{ console.log('BUBBLE:', t); showBubble(t); });
 }
 </script>
 </body>
