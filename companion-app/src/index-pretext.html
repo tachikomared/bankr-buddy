@@ -3,38 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <title>Bankr Buddy — PRETEXT</title>
-<!-- Made by TachikomaRed x smolemaru — Pretext Matrix Companion -->
 <style>
-* { margin:0; padding:0; box-sizing:border-box; user-select:none; -webkit-user-select:none; }
-html, body { width:160px; height:160px; background:transparent; overflow:visible; font-family:'Courier New', Courier, monospace; }
-#pet { position:absolute; left:0; top:0; width:160px; height:160px; cursor:grab; transform-origin:center center; z-index:10; }
-canvas { display:block; width:160px; height:160px; }
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-user-select:none}
+html,body{width:160px;height:160px;background:transparent;overflow:hidden;font-family:'Courier New',monospace}
+#pet{position:absolute;left:0;top:0;width:160px;height:160px;cursor:grab;transform-origin:center center;z-index:10}
+#bubble{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);z-index:99;background:#001b00;color:#00ff41;font-size:9px;font-weight:bold;padding:3px 6px;border:1px solid #00ff41;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+#bubble.show{opacity:1}
+canvas{display:block;width:160px;height:160px}
 </style>
 </head>
 <body>
-<div id="pet" class="anim-idle">
- <canvas id="c" width="320" height="320"></canvas>
+<div id="pet">
+  <div id="bubble"></div>
+  <canvas id="c" width="320" height="320"></canvas>
 </div>
 <script>
 const DPR=2,W=160,H=160;
-const canvas=document.getElementById('c');
-const ctx=canvas.getContext('2d');
-canvas.width=W*DPR;canvas.height=H*DPR;
-ctx.scale(DPR,DPR);
-function speak(t){console.log('PRETEXT SPEECH:',t);}
-if(window.buddy){
- window.buddy.onStateChange((d)=>{console.log('STATE:',d.state);});
- window.buddy.onShowBubble((t)=>{speak(t);});
-}
-// Render loop placeholder
-function draw(){
- ctx.clearRect(0,0,W,H);
- ctx.fillStyle='#00ff41';
- ctx.font='10px "Courier New"';
- ctx.fillText('PRETEXT ONCHAIN',10,80);
- requestAnimationFrame(draw);
-}
-draw();
+const c=document.getElementById('c'),x=c.getContext('2d');
+c.width=W*DPR;c.height=H*DPR;x.scale(DPR,DPR);
+const b=document.getElementById('bubble');
+let state='idle',txt='';
+function showBubble(t){txt=t||'';b.textContent=txt;b.classList.add('show');setTimeout(()=>b.classList.remove('show'),2200)}
+function render(){x.clearRect(0,0,W,H);x.fillStyle='#00ff41';x.font='bold 12px "Courier New"';x.fillText('PRETEXT',18,52);x.fillStyle='#0a0';x.font='10px "Courier New"';x.fillText('ONCHAIN',22,68);x.fillStyle='#00ff41';x.font='bold 8px "Courier New"';x.fillText(state.toUpperCase(),16,92);requestAnimationFrame(render)}
+if(window.buddy){window.buddy.onStateChange(d=>{state=d.state||'idle'});window.buddy.onShowBubble(t=>showBubble(t))}
+render();
 </script>
 </body>
 </html>
