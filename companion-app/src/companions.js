@@ -7,21 +7,19 @@ const fs   = require('fs');
 const path = require('path');
 const { app } = require('electron');
 
-// ── Registered companions ─────────────────────────────────────────────────────
-// Each entry maps a name → the html file in src/
-// Add new companions here — just drop an index-<name>.html in src/
+// ── Registered companions ─────────────────────────────────────
 const COMPANIONS = [
   {
     id:          'tv',
     label:       '📺 Retro TV (original)',
-    file:        'index-tv.html',      // renamed from original index.html
+    file:        'index.html',
     description: 'The classic Bankr Buddy retro CRT TV',
   },
   {
     id:          'okcomputer',
     label:       '🤖 OKcomputer Robot',
     file:        'index-okcomputer.html',
-    description: 'Pixel robot from the GIF — boxing fists, antenna, full body',
+    description: 'Pixel robot — boxing fists, antenna, full body',
   },
   {
     id:          'ham',
@@ -35,9 +33,21 @@ const COMPANIONS = [
     file:        'index-deployer.html',
     description: 'Onchain deployer assistant',
   },
+  {
+    id:          'pretext',
+    label:       '◎ Pretext Matrix',
+    file:        'index-pretext.html',
+    description: 'Matrix-morphing text companion — glyphs ARE the body, pretext speech',
+  },
+  {
+    id:          'tachi',
+    label:       '🦀 $TACHI Crab Agent',
+    file:        'index-tachi.html',
+    description: 'Mech crab AI agent — Base chain, cigarette, matrix streams',
+  },
 ];
 
-// ── Persistence ───────────────────────────────────────────────────────────────
+// ── Persistence ───────────────────────────────────────────────
 const CONFIG_FILE = path.join(app.getPath('userData'), 'companion-config.json');
 
 function loadConfig() {
@@ -54,11 +64,11 @@ function saveConfig(cfg) {
   } catch {}
 }
 
-// ── CompanionManager ──────────────────────────────────────────────────────────
+// ── CompanionManager ──────────────────────────────────────────
 class CompanionManager {
   constructor() {
-    this._cfg         = loadConfig();
-    this._onChange    = null;   // callback(companionId, htmlPath) → void
+    this._cfg      = loadConfig();
+    this._onChange  = null;
   }
 
   get active() {
@@ -69,27 +79,19 @@ class CompanionManager {
     return COMPANIONS;
   }
 
-  // Returns absolute path to the active companion's HTML file
   get htmlPath() {
     const srcDir = path.join(__dirname);
     return path.join(srcDir, this.active.file);
   }
 
-  // Switch to a companion by id — calls onChange if registered
   async switchTo(id) {
     const found = COMPANIONS.find(c => c.id === id);
     if (!found) throw new Error(`Unknown companion: ${id}`);
-
     this._cfg.active = id;
     saveConfig(this._cfg);
-
-    if (this._onChange) {
-      await this._onChange(id, this.htmlPath);
-    }
+    if (this._onChange) await this._onChange(id, this.htmlPath);
   }
 
-  // Register callback for when companion switches
-  // callback: async (id, htmlPath) => void
   onChange(cb) {
     this._onChange = cb;
   }
