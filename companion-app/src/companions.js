@@ -12,7 +12,7 @@ const COMPANIONS = [
   {
     id:          'tv',
     label:       '📺 Retro TV (original)',
-    file:        'index.html',
+    file:        'index-tv.html',
     description: 'The classic Bankr Buddy retro CRT TV',
   },
   {
