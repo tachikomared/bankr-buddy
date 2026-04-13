@@ -207,7 +207,7 @@ function savePosition(x, y) {
 // ── Window ────────────────────────────────────────────────────────────────────
 function createWindow() {
   const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
-  const W = 200, H = 200;
+  const W = 340, H = 320;
   const saved = loadPosition();
 
   mainWindow = new BrowserWindow({
